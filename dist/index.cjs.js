@@ -7,12 +7,12 @@ var fs = _interopDefault(require('fs-extra'));
 var cheerio = _interopDefault(require('cheerio'));
 var SVGO = _interopDefault(require('svgo'));
 
-function createSymbol(code, id) {
+function createSymbol(code, id, customId) {
   const markup = cheerio.load(code, {
     xmlMode: true
   });
   const svgMarkup = markup('svg');
-  const symbolId = svgMarkup.find('title').text() || id;
+  const symbolId = customId || svgMarkup.find('title').text() || id;
   const viewBox = svgMarkup.attr('viewBox') || [0, 0, svgMarkup.attr('width'), svgMarkup.attr('height')].join(' ');
   markup('svg').replaceWith('<symbol/>');
   markup('symbol').attr('id', symbolId).attr('viewBox', viewBox).append(svgMarkup.children());
@@ -27,6 +27,7 @@ function svgSprite(options = {}) {
   const {
     minify = true,
     outputFolder,
+    symbolId,
     ...rest
   } = options;
 
@@ -68,7 +69,16 @@ function svgSprite(options = {}) {
       }
 
       const filename = path.basename(id, '.svg');
-      convertedSvgs.set(id, createSymbol(code, filename));
+      let customId;
+
+      if (typeof symbolId === 'function') {
+        customId = symbolId({
+          code,
+          filename: id
+        });
+      }
+
+      convertedSvgs.set(id, createSymbol(code, filename, customId));
       return {
         code: ''
       };

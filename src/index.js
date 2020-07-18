@@ -3,10 +3,10 @@ import fs from 'fs-extra'
 import cheerio from 'cheerio'
 import SVGO from 'svgo'
 
-function createSymbol(code, id) {
+function createSymbol(code, id, customId) {
   const markup = cheerio.load(code, { xmlMode: true })
   const svgMarkup = markup('svg')
-  const symbolId = svgMarkup.find('title').text() || id
+  const symbolId = customId || svgMarkup.find('title').text() || id
   const viewBox = svgMarkup.attr('viewBox')
     || [0, 0, svgMarkup.attr('width'), svgMarkup.attr('height')].join(' ')
 
@@ -24,7 +24,12 @@ function createSprite(symbols) {
 }
 
 export default function svgSprite(options = {}) {
-  const { minify = true, outputFolder, ...rest } = options
+  const {
+    minify = true,
+    outputFolder,
+    symbolId,
+    ...rest
+  } = options
 
   if (!outputFolder) {
     throw new Error('"outputFolder" must be set')
@@ -60,8 +65,12 @@ export default function svgSprite(options = {}) {
       }
 
       const filename = path.basename(id, '.svg')
+      let customId
+      if (typeof symbolId === 'function') {
+        customId = symbolId({ code, filename: id })
+      }
 
-      convertedSvgs.set(id, createSymbol(code, filename))
+      convertedSvgs.set(id, createSymbol(code, filename, customId))
 
       return {
         code: ''

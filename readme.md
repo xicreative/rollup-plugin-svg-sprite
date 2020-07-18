@@ -71,6 +71,21 @@ svgSprite({
 })
 ```
 
+#### symbolId
+
+Type: `function` | Default: `undefined`
+
+Customize the `id` of the SVG `<symbol>`, based on either the file path or SVG
+source code.
+
+```js
+svgSprite({
+  symbolId(({ filename, code }) => {
+    const id = path.basename(filename, '.svg')
+    return `custom-${id}`;
+  });
+```
+
 All other options are passed to [svgo package](https://github.com/svg/svgo) which is used inside.
 
 ## License

@@ -1,5 +1,6 @@
 import { rollup } from 'rollup'
 import fs from 'fs-extra'
+import { basename } from 'path'
 import svgSprite from '../src'
 
 process.chdir(`${__dirname}/fixtures`)
@@ -58,6 +59,26 @@ describe('Generate sprite file', () => {
 
     expect(await fs.pathExists('dist/sprites.svg')).toBe(true)
     expect(await readFile('dist/sprites.svg')).toBe(await readFile('samples/not-minified.svg'))
+  })
+
+  test('Custom Symbol IDs', async () => {
+    await build({
+      outputFolder: 'dist',
+      minify: false,
+      symbolId: ({ code, filename }) => {
+        const regexp = /<!-- symbolName:(\S+) -->/m
+        const matches = code.match(regexp)
+        const id = basename(filename, '.svg')
+
+        if (matches && matches[1]) {
+          return matches[1]
+        }
+        return `custom-${id}`
+      }
+    })
+
+    expect(await fs.pathExists('dist/sprites.svg')).toBe(true)
+    expect(await readFile('dist/sprites.svg')).toBe(await readFile('samples/custom-ids.svg'))
   })
 
   test('SVGO options', async () => {
